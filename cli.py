@@ -29,6 +29,7 @@ import textwrap
 from urllib.parse import unquote, urlparse
 from contextlib import contextmanager
 from pathlib import Path
+from collections import deque
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
@@ -2028,12 +2029,70 @@ class HermesCLI:
         self._background_tasks: Dict[str, threading.Thread] = {}
         self._background_task_counter = 0
 
+        # Notification system for inter-agent communication
+        self._notification_queue: deque = deque(maxlen=10)
+        self._notification_watcher: Optional[threading.Thread] = None
+        self._notification_watcher_started = False
+        self._notifications_unread = 0
+
     def _invalidate(self, min_interval: float = 0.25) -> None:
         """Throttled UI repaint — prevents terminal blinking on slow/SSH connections."""
         now = time.monotonic()
         if hasattr(self, "_app") and self._app and (now - self._last_invalidate) >= min_interval:
             self._last_invalidate = now
             self._app.invalidate()
+
+    def _start_notification_watcher(self):
+        """Start filesystem watcher for notifications from other agents/channels."""
+        if self._notification_watcher_started:
+            return
+
+        def watch_notifications():
+            import json
+            watch_path = Path.home() / ".hermes" / "neo" / "notifications"
+            watch_path.mkdir(parents=True, exist_ok=True)
+
+            while True:
+                try:
+                    # Check every 1 second
+                    time.sleep(1)
+
+                    # Look for new notification files
+                    for f in watch_path.glob("*.json"):
+                        try:
+                            with open(f) as fp:
+                                notification = json.load(fp)
+
+                            # Check TTL
+                            age = time.time() - notification.get("timestamp", 0)
+                            if age > notification.get("ttl", 300):
+                                f.unlink()
+                                continue
+
+                            # Add to queue
+                            self._notification_queue.append(notification)
+                            self._notifications_unread += 1
+
+                            # Trigger UI refresh
+                            self._invalidate(min_interval=0.1)
+
+                            # Delete processed file
+                            f.unlink()
+                        except Exception:
+                            pass  # Corrupted file, skip
+
+                except Exception:
+                    pass  # Keep watcher alive
+
+        self._notification_watcher = threading.Thread(
+            target=watch_notifications,
+            daemon=True,
+            name="notification-watcher"
+        )
+        self._notification_watcher.start()
+        self._notification_watcher_started = True
+
+
 
     def _status_bar_context_style(self, percent_used: Optional[int]) -> str:
         if percent_used is None:
@@ -2309,6 +2368,21 @@ class HermesCLI:
         except Exception:
             return f"⚕ {self.model if getattr(self, 'model', None) else 'Hermes'}"
 
+
+    def _get_notification_badge(self) -> str:
+        """Return notification badge string for status bar if unread notifications exist."""
+        if self._notifications_unread <= 0:
+            return ""
+
+        # Clear badge when user is actively typing (prompt started)
+        if getattr(self, "_prompt_start_time", None) is not None:
+            self._notifications_unread = 0
+            return ""
+
+        if self._notifications_unread == 1:
+            return "📱 1 │ "
+        return f"📱 {self._notifications_unread} │ "
+
     def _get_status_bar_fragments(self):
         if not self._status_bar_visible or getattr(self, '_model_picker_state', None):
             return []
@@ -2334,8 +2408,9 @@ class HermesCLI:
                 percent = snapshot["context_percent"]
                 percent_label = f"{percent}%" if percent is not None else "--"
                 if width < 76:
+                    notification_badge = self._get_notification_badge()
                     frags = [
-                        ("class:status-bar", " ⚕ "),
+                        ("class:status-bar", f" ⚕ {notification_badge}"),
                         ("class:status-bar-strong", snapshot["model_short"]),
                         ("class:status-bar-dim", " · "),
                         (self._status_bar_context_style(percent), percent_label),
@@ -2352,8 +2427,9 @@ class HermesCLI:
                         context_label = "ctx --"
 
                     bar_style = self._status_bar_context_style(percent)
+                    notification_badge = self._get_notification_badge()
                     frags = [
-                        ("class:status-bar", " ⚕ "),
+                        ("class:status-bar", f" ⚕ {notification_badge}"),
                         ("class:status-bar-strong", snapshot["model_short"]),
                         ("class:status-bar-dim", " │ "),
                         ("class:status-bar-dim", context_label),
