@@ -64,6 +64,8 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("history", "Show conversation history", "Session",
                cli_only=True),
+    CommandDef("notifications", "Show notifications from other agents/channels", "Session",
+               cli_only=True, aliases=("notif", "notify")),
     CommandDef("save", "Save the current conversation", "Session",
                cli_only=True),
     CommandDef("retry", "Retry the last message (resend to agent)", "Session"),

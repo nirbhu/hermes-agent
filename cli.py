@@ -4577,6 +4577,39 @@ class HermesCLI:
         flush_tool_summary()
         print()
     
+    def _show_notifications(self):
+        """Display pending notifications from other agents/channels."""
+        if not self._notification_queue:
+            print("(._.) No notifications pending.")
+            print("      Notifications from cron, Telegram, or other agents appear here.")
+            return
+        
+        print()
+        print("+" + "-" * 50 + "+")
+        print("|" + " " * 12 + "📱 Notifications" + " " * 22 + "|")
+        print("+" + "-" * 50 + "+")
+        
+        for i, notification in enumerate(self._notification_queue, 1):
+            source = notification.get("source", "unknown")
+            title = notification.get("title", "No title")
+            priority = notification.get("priority", "normal")
+            data = notification.get("data", {})
+            
+            priority_emoji = "🔴" if priority == "urgent" else "🔵"
+            print(f"\n  [{i}] {priority_emoji} From: {source}")
+            print(f"      {title}")
+            if data:
+                print(f"      Data: {data}")
+        
+        print()
+        print(f"  Total: {self._notifications_unread} unread")
+        print("  (Badge clears when you submit your next prompt)")
+        print()
+        
+        # Clear the queue and badge
+        self._notification_queue.clear()
+        self._notifications_unread = 0
+    
     def _notify_session_boundary(self, event_type: str) -> None:
         """Fire a session-boundary plugin hook (on_session_finalize or on_session_reset).
 
@@ -5964,6 +5997,8 @@ class HermesCLI:
                     self._console_print(f"[dim {_tip_color}]✦ Tip: {_tip}[/]")
                 except Exception:
                     pass
+        elif canonical == "notifications":
+            self._show_notifications()
         elif canonical == "history":
             self.show_history()
         elif canonical == "title":
@@ -10513,6 +10548,9 @@ class HermesCLI:
 
         spinner_thread = threading.Thread(target=spinner_loop, daemon=True)
         spinner_thread.start()
+
+        # Start notification watcher for inter-agent communication
+        self._start_notification_watcher()
         
         # Background thread to process inputs and run agent
         def process_loop():
