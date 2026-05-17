@@ -1,0 +1,81 @@
+# Gitignore for personal Hermes fleet data
+# All user-specific data is excluded. Skeleton/template files are committed.
+
+# === Personal configuration (never share) ===
+.env
+config.yaml
+config.yaml.bak*
+auth.json
+credentials/
+pairing/
+webui_secret_key
+
+# === Profile personal data ===
+profiles/*/.env
+profiles/*/sessions/
+profiles/*/memories/
+profiles/*/home/
+profiles/*/logs/
+profiles/*/.skills_prompt_snapshot.json
+profiles/*/.update_check
+profiles/*/state.db
+profiles/*/state.db-*
+
+# === Runtime data ===
+state.db
+state.db-shm
+state.db-wal
+response_store.db
+response_store.db-shm
+response_store.db-wal
+kanban.db
+kanban/
+sessions/
+logs/
+agents/
+agents/_archive/
+cache/
+checkpoints/
+processes.json
+gateway.lock
+gateway.pid
+gateway_state.json
+*.lock
+
+# === Personal knowledge/data (never share) ===
+cortex/shared/user-profile.json
+cortex/shared/trend-alerts.json
+cortex/shared/model-benchmarks.md
+cortex/mimir/
+cortex/neo/
+cortex/career/
+cortex/fitness/
+cortex/archive/
+cortex/einstein-neo/
+cortex/enigma-neo/
+cortex/hemingway-neo/
+cortex/kachra-neo/
+cortex/mimir-neo/
+cortex/mimir-einstein/
+cortex/einstein-mimir/
+cortex/research/
+
+# === Agentmemory data ===
+.agentmemory/
+
+# === OS/editor junk ===
+.DS_Store
+.idea/
+.vscode/
+*.pyc
+__pycache__/
+*.egg-info/
+venv/
+.venv/
+
+# === Temporary/build ===
+tmp/
+*.tmp
+*.bak
+*.swp
+EOF

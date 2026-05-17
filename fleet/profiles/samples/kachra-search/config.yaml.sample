@@ -1,0 +1,45 @@
+# Kachra-Search Profile Configuration
+# Copy to ~/.hermes/profiles/kachra-search/config.yaml and customize
+
+model:
+  default: qwen3.5:cloud
+  provider: ollama-launch
+  base_url: http://127.0.0.1:11434/v1
+  api_key: ollama
+
+providers:
+  ollama-launch:
+    api: http://127.0.0.1:11434/v1
+    default_model: qwen3.5:cloud
+    name: OllamaLaunch
+
+mcp_servers:
+  agentmemory:
+    command: npx
+    args:
+      - -y
+      - '@agentmemory/mcp'
+    env:
+      AGENTMEMORY_URL: http://localhost:3111
+
+memory:
+  memory_enabled: true
+  user_profile_enabled: true
+  memory_char_limit: 10000
+  user_char_limit: 4000
+  provider: agentmemory
+  flush_min_turns: 6
+  nudge_interval: 10
+
+toolsets:
+  - web
+  - search
+  - terminal
+  - file
+
+agent:
+  max_turns: 90
+  tool_use_enforcement: true
+
+terminal:
+  timeout: 300

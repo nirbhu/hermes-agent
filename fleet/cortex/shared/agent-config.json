@@ -1,0 +1,70 @@
+# Fleet Agent Config — Template
+# Copy to cortex/shared/agent-config.json and customize.
+# This file defines the fleet roster: agents, models, roles, handoff directories.
+
+{
+  "agents": {
+    "neo": {
+      "role": "Coordinator/partner",
+      "model": "varies per session",
+      "gateway": true,
+      "notes": "Main session model. Check current session for model."
+    },
+    "einstein": {
+      "role": "Research/reasoning oracle",
+      "model": "gemma4:31b-cloud",
+      "context": "256K",
+      "profile": "einstein/",
+      "handoff_dirs": [
+        "neo-einstein/",
+        "einstein-neo/",
+        "einstein-mimir/"
+      ]
+    },
+    "mimir": {
+      "role": "Learning co-pilot",
+      "model": "deepseek-v4-flash:cloud",
+      "profile": "mimir/",
+      "gateway": true,
+      "handoff_dirs": [
+        "neo-mimir/",
+        "mimir-neo/"
+      ],
+      "notes": "Telegram bot. Persistent gateway."
+    },
+    "enigma": {
+      "role": "Implementation/code",
+      "model": "deepseek-v4-flash:cloud",
+      "profile": "enigma/",
+      "handoff_dirs": [
+        "neo-enigma/",
+        "enigma-neo/"
+      ]
+    },
+    "hemingway": {
+      "role": "Voice/writing",
+      "model": "kimi-k2.6:cloud",
+      "profile": "hemingway/",
+      "handoff_dirs": [
+        "neo-hemingway/",
+        "hemingway-neo/"
+      ]
+    },
+    "kachra-search": {
+      "role": "Search bot",
+      "model": "qwen3.5:cloud",
+      "gateway": true,
+      "notes": "Telegram bot. Group search."
+    }
+  },
+  "daemons": {
+    "kanban-daemon": "hermes kanban daemon — dispatches ready tasks to agents",
+    "mimir-gateway": "tmux session — Mimir's live Telegram bot",
+    "kachra-search": "tmux session — Kachra Search Telegram bot"
+  },
+  "vision": {
+    "primary": "gemma4:31b-cloud on ollama-launch",
+    "local_fallback": "gemma3:4b (ollama)",
+    "notes": "Configure via auxiliary.vision in config.yaml"
+  }
+}
