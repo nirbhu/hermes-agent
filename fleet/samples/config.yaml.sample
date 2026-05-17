@@ -56,6 +56,18 @@ compression:
   threshold: 0.50
   target_ratio: 0.20
 
+
+# === Kanban (Fleet Task System) ===
+# Only ONE profile should have dispatch_in_gateway: true (prevents race conditions)
+# Other profiles set dispatch_in_gateway: false — they handle Telegram only
+kanban:
+  dispatch_in_gateway: true
+  dispatch_interval_seconds: 60
+  max_spawn: 1
+  failure_limit: 2
+  auto_decompose: false
+  orchestrator_profile: "bawa-neo"
+  default_assignee: "bawa-neo"
 # === Vision (auxiliary model) ===
 auxiliary:
   vision:
